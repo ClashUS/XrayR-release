@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "bashdb",
+            "request": "launch",
+            "name": "Bash-Debug (simplest configuration)",
+            "program": "${file}",
+            "args": [
+                "-configTemplateURL",
+                "https://raw.githubusercontent.com/ClashUS/XrayR-release/master/reality.template.config.yml",
+                "-e",
+                "API_KEY=pwd123.,API_HOST=https://baidu.com,NODE_ID=0,SEVER_NAME=www.bing.com"
+            ]
+
+        }
+    ]
+}

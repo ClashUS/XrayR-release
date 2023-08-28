@@ -1,4 +1,27 @@
 #!/bin/bash
+# ./install -configTemplateURL 'https://raw.githubusercontent.com/ClashUS/XrayR-release/master/reality.template.config.yml' -e "API_KEY=your-api-key,API_HOST=your-api-host,NODE_ID=your-node-id,SEVER_NAME=www.bing.com"
+# fetch parameters from the command line
+while [[ $# -gt 0 ]]; do
+    key="$1"
+
+    case $key in
+    -configTemplateURL)
+        configTemplateURL="$2"
+        shift
+        shift
+        ;;
+    -e)
+        export_vars="$2"
+        IFS=',' read -ra EXPORTS <<<"$export_vars"
+        shift
+        shift
+        ;;
+    *)
+        # unknown option
+        shift
+        ;;
+    esac
+done
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -44,7 +67,7 @@ fi
 
 echo "架构: ${arch}"
 
-if [ "$(getconf WORD_BIT)" != '32' ] && [ "$(getconf LONG_BIT)" != '64' ] ; then
+if [ "$(getconf WORD_BIT)" != '32' ] && [ "$(getconf LONG_BIT)" != '64' ]; then
     echo "本软件不支持 32 位系统(x86)，请使用 64 位系统(x86_64)，如果检测有误，请联系作者"
     exit 2
 fi
@@ -106,9 +129,9 @@ install_XrayR() {
     fi
 
     mkdir /usr/local/XrayR/ -p
-	cd /usr/local/XrayR/
+    cd /usr/local/XrayR/
 
-    if  [ $# == 0 ] ;then
+    if [ $# == 0 ]; then
         last_version=$(curl -Ls "https://api.github.com/repos/wyx2685/XrayR/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
         if [[ ! -n "$last_version" ]]; then
             echo -e "${red}检测 XrayR 版本失败，可能是超出 Github API 限制，请稍后再试，或手动指定 XrayR 版本安装${plain}"
@@ -123,9 +146,9 @@ install_XrayR() {
     else
         if [[ $1 == v* ]]; then
             last_version=$1
-	else
-	    last_version="v"$1
-	fi
+        else
+            last_version="v"$1
+        fi
         url="https://github.com/wyx2685/XrayR/releases/download/${last_version}/XrayR-linux-${arch}.zip"
         echo -e "开始安装 XrayR ${last_version}"
         wget -q -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip ${url}
@@ -148,7 +171,7 @@ install_XrayR() {
     systemctl enable XrayR
     echo -e "${green}XrayR ${last_version}${plain} 安装完成，已设置开机自启"
     cp geoip.dat /etc/XrayR/
-    cp geosite.dat /etc/XrayR/ 
+    cp geosite.dat /etc/XrayR/
 
     if [[ ! -f /etc/XrayR/config.yml ]]; then
         cp config.yml /etc/XrayR/
@@ -162,7 +185,7 @@ install_XrayR() {
         if [[ $? == 0 ]]; then
             echo -e "${green}XrayR 重启成功${plain}"
         else
-            echo -e "${red}XrayR 可能启动失败，请稍后使用 XrayR log 查看日志信息，若无法启动，则可能更改了配置格式，请前往 wiki 查看：https://github.com/XrayR-project/XrayR/wiki${plain}"
+            echo -e "${red}XrayR 可能启动失败，请稍后使用 XrayR log 查看日志信息，若无法启动，则可能更改了配置格式，请前往 wiki 查看：https://github.com/wyx2685/XrayR/wiki${plain}"
         fi
     fi
 
@@ -187,6 +210,22 @@ install_XrayR() {
     chmod +x /usr/bin/xrayr
     cd $cur_dir
     rm -f install.sh
+
+    if [ -n "$configTemplateURL" ]; then
+        # 一次性获取整个模板内容，并替换其中的占位符
+        template_content=$(curl -s "$configTemplateURL")
+        content="$template_content"
+        for item in "${EXPORTS[@]}"; do
+            # 将 "key=value" 分割为两个部分: key 和 value
+            IFS="=" read -ra parts <<< "$item"
+            local key="${parts[0]}"
+            local value="${parts[1]}"
+            content=$(echo "$content" | sed "s#\${$key}#$value#g")
+        done
+        echo "$content" > /etc/XrayR/config.yml
+        echo "已使用 $configTemplateURL 模版"
+    fi
+
     echo -e ""
     echo "XrayR 管理脚本使用方法 (兼容使用xrayr执行，大小写不敏感): "
     echo "------------------------------------------"
