@@ -209,7 +209,6 @@ install_XrayR() {
     ln -s /usr/bin/XrayR /usr/bin/xrayr # 小写兼容
     chmod +x /usr/bin/xrayr
     cd $cur_dir
-    rm -f install.sh
 
     if [ -n "$configTemplateURL" ]; then
         # 一次性获取整个模板内容，并替换其中的占位符
@@ -220,12 +219,12 @@ install_XrayR() {
             IFS="=" read -ra parts <<< "$item"
             local key="${parts[0]}"
             local value="${parts[1]}"
-            content=$(echo "$content" | sed "s#\${$key}#$value#g")
+            content=$(echo "$content" | sed "s,\${$key},$value,g")
         done
         echo "$content" > /etc/XrayR/config.yml
         echo "已使用 $configTemplateURL 模版"
     fi
-
+    rm -f install.sh
     echo -e ""
     echo "XrayR 管理脚本使用方法 (兼容使用xrayr执行，大小写不敏感): "
     echo "------------------------------------------"
